@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   netbird:
-    image: netbirdio/netbird:0.71.4-arm64v8
+    image: netbirdio/netbird:0.71.4-rootless
     container_name: docker_berrybird
     hostname: docker_berrybird
     network_mode: host
