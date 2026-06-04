@@ -2,14 +2,13 @@
 FROM golang:1.20-alpine AS builder
 WORKDIR /app
 
-# 移除了所有 // 注释，防止在 shell 执行时因为换行丢失导致代码被吞掉
+# 核心修改：在 if 和 go func() 等语句的右大括号 } 后面加上了分号 ; 
+# 这样即使云平台把代码压缩成单行，Go 编译器也能正确解析
 RUN echo 'package main; \
 import ("net/http"; "log"; "os"; "os/exec"); \
 func main() { \
     port := os.Getenv("PORT"); \
-    if port == "" { \
-        port = "8080"; \
-    } \
+    if port == "" { port = "8080"; }; \
     go func() { \
         http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) { \
             w.WriteHeader(200); \
@@ -18,16 +17,12 @@ func main() { \
         log.Printf("Healthcheck server started on port :%s\n", port); \
         log.Fatal(http.ListenAndServe(":"+port, nil)); \
     }(); \
-    if len(os.Args) < 2 { \
-        log.Fatal("No command provided to execute."); \
-    } \
+    if len(os.Args) < 2 { log.Fatal("No command provided to execute."); }; \
     cmd := exec.Command(os.Args[1], os.Args[2:]...); \
     cmd.Stdout = os.Stdout; \
     cmd.Stderr = os.Stderr; \
     log.Printf("Starting main process: %v\n", os.Args[1:]); \
-    if err := cmd.Run(); err != nil { \
-        log.Fatalf("Main process exited with error: %v", err); \
-    } \
+    if err := cmd.Run(); err != nil { log.Fatalf("Main process exited with error: %v", err); }; \
 }' > main.go
 
 RUN go build -o healthcheck main.go
